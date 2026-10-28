@@ -43,7 +43,15 @@ inputs:
     default: on-change
   image:
     description: The ArchScan image that scans and diffs.
-    default: ghcr.io/inomjonkadirov/archscan:0.12.0
+    default: ghcr.io/inomjonkadirov/archscan:0.13.0
+  snapshots:
+    description: >-
+      For the comment workflow of a fork's pull request: a directory with base.json and head.json, the
+      snapshots output of the pull request's own run, to diff instead of building and scanning (so leave
+      out build-command and baseline-file). The policy is then the pull request's base commit's
+      archscan.yaml, or this checkout's when the pull request is not known; a relative path is relative
+      to working-directory.
+    default: ''
 
 outputs:
   gate:
@@ -58,6 +66,9 @@ outputs:
   json:
     description: Path of the JSON result.
     value: ${{ steps.diff.outputs.json }}
+  snapshots:
+    description: A directory with this run's two snapshots, base.json and head.json, for the comment workflow of a fork's pull request.
+    value: ${{ steps.diff.outputs.snapshots }}
 
 runs:
   using: composite
@@ -74,7 +85,12 @@ runs:
         INPUT_GATE: ${{ inputs.gate }}
         INPUT_COMMENT: ${{ inputs.comment }}
         INPUT_IMAGE: ${{ inputs.image }}
+        INPUT_SNAPSHOTS: ${{ inputs.snapshots }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        RUN_EVENT: ${{ github.event.workflow_run.event }}
+        RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        RUN_HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+        RUN_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         GH_TOKEN: ${{ github.token }}
       run: '"$GITHUB_ACTION_PATH/archscan-diff.sh"'
