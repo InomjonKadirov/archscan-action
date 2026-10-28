@@ -1,0 +1,80 @@
+name: ArchScan architecture gate
+description: >-
+  Scan a pull request's base and head with ArchScan, fail on new external systems and new
+  cross-service or async dependencies, and keep the report in one pull request comment.
+
+inputs:
+  config:
+    description: archscan.yaml, relative to working-directory.
+    default: archscan.yaml
+  working-directory:
+    description: The checkout to scan (actions/checkout's path).
+    default: .
+  base:
+    description: >-
+      The commit to compare against. Defaults to the pull request's base; on push, pass
+      github.event.before (a push that creates a branch has none and is skipped).
+    default: ${{ github.event.pull_request.base.sha }}
+  baseline-file:
+    description: >-
+      A committed model.json to compare against instead of scanning base, relative to
+      working-directory. It is read from the base commit, so a pull request cannot edit its own
+      baseline; without a base commit, from the checkout.
+    default: ''
+  build-command:
+    description: >-
+      Runs before each scan, in the head checkout and in the base checkout (for example
+      ./gradlew classes). ArchScan's default BYTECODE phase reads compiled classes.
+    default: ''
+  policy:
+    description: >-
+      Whose archscan.yaml sets the gate policy (its diff block): head, the pull request's own, or
+      base, the base commit's, which then also decides what is scanned; a pull request's own change to
+      it gets a warning and takes effect once it merges.
+    default: head
+  gate:
+    description: config follows diff.gate in the policy file; on enforces the gate anyway; off only reports.
+    default: config
+  comment:
+    description: >-
+      on-change posts the report when the diff has changes and keeps an earlier comment current;
+      always posts it on every run; never leaves comments alone. Each working-directory and config
+      keeps its own comment.
+    default: on-change
+  image:
+    description: The ArchScan image that scans and diffs.
+    default: ghcr.io/inomjonkadirov/archscan:0.12.0
+
+outputs:
+  gate:
+    description: passed, failed, disabled, skipped (nothing to compare against yet) or error (the step failed; the job summary says why).
+    value: ${{ steps.diff.outputs.gate }}
+  exit-code:
+    description: The exit code of archscan diff (0 passed or disabled, 1 violations, 2 error, also for a failure of the step itself).
+    value: ${{ steps.diff.outputs.exit-code }}
+  report:
+    description: Path of the Markdown report.
+    value: ${{ steps.diff.outputs.report }}
+  json:
+    description: Path of the JSON result.
+    value: ${{ steps.diff.outputs.json }}
+
+runs:
+  using: composite
+  steps:
+    - id: diff
+      shell: bash
+      env:
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_BASE: ${{ inputs.base }}
+        INPUT_BASELINE_FILE: ${{ inputs.baseline-file }}
+        INPUT_BUILD_COMMAND: ${{ inputs.build-command }}
+        INPUT_POLICY: ${{ inputs.policy }}
+        INPUT_GATE: ${{ inputs.gate }}
+        INPUT_COMMENT: ${{ inputs.comment }}
+        INPUT_IMAGE: ${{ inputs.image }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        GH_TOKEN: ${{ github.token }}
+      run: '"$GITHUB_ACTION_PATH/archscan-diff.sh"'
