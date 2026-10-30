@@ -43,7 +43,7 @@ inputs:
     default: on-change
   image:
     description: The ArchScan image that scans and diffs.
-    default: ghcr.io/inomjonkadirov/archscan:0.13.0
+    default: ghcr.io/inomjonkadirov/archscan:0.14.0
   snapshots:
     description: >-
       For the comment workflow of a fork's pull request: a directory with base.json and head.json, the

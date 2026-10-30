@@ -185,7 +185,7 @@ request's code with it hands the token to that code.
 
 ## Versions
 
-`@v0` follows the latest 0.x release; pin a release such as `@v0.13.0` to keep one ArchScan version.
+`@v0` follows the latest 0.x release; pin a release such as `@v0.14.0` to keep one ArchScan version.
 Each release pins its own image, and `image` overrides it.
 
 ## Requirements
