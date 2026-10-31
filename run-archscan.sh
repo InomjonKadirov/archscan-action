@@ -18,4 +18,7 @@ tmp="$(cd "${TMPDIR:-/tmp}" && pwd)"   # normalised: no trailing or doubled slas
 mounts=(--mount "type=bind,source=$here,target=$here")
 [ "$tmp" = "$here" ] || mounts+=(--mount "type=bind,source=$tmp,target=$tmp")
 
-exec docker run --rm --quiet --user "$(id -u):$(id -g)" "${mounts[@]}" -w "$here" "$image" "$@"
+# `archscan mcp` reads its client on stdin; nothing else may take the caller's stdin
+interactive=()
+[ "${1:-}" != mcp ] || interactive=(--interactive)
+exec docker run --rm --quiet ${interactive[@]+"${interactive[@]}"} --user "$(id -u):$(id -g)" "${mounts[@]}" -w "$here" "$image" "$@"
